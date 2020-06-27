@@ -16,6 +16,9 @@ bonds, globularity, and PBF.
 """
 
 
+PRIMARY_AMINE_SMARTS = pybel.Smarts('[$([N;H2;X3][CX4]),$([N;H3;X4+][CX4])]')
+
+
 def main():
     args = parse_args(sys.argv[1:])
     if(args.smiles):
@@ -78,6 +81,7 @@ def report_properties(properties):
     print("RB:\t\t%i" % properties['rb'])
     print("Glob:\t\t%f" % properties['glob'])
     print("PBF:\t\t%f" % properties['pbf'])
+    print("P. Amine:\t%s" % properties['primary_amine'])
 
 
 def parse_batch(filename):
@@ -113,7 +117,7 @@ def write_csv(mols_to_write, filename):
     :return: None
     """
     with(open(filename, 'w')) as out:
-        fieldnames = ['smiles', 'formula', 'molwt', 'rb', 'glob', 'pbf']
+        fieldnames = ['smiles', 'formula', 'molwt', 'rb', 'glob', 'pbf', 'primary_amine']
         writer = csv.DictWriter(out, fieldnames=fieldnames)
         writer.writeheader()
         for mol in mols_to_write:
@@ -148,7 +152,8 @@ def average_properties(mol):
         'molwt': pymol.molwt,
         'rb': rotatable_bonds(pymol),
         'glob': np.mean(globs),
-        'pbf': np.mean(pbfs)
+        'pbf': np.mean(pbfs),
+        'primary_amine': has_primary_amine(pymol)
     }
     return data
 
@@ -264,6 +269,19 @@ def calc_pbf(mol):
     c, n = svd_fit(points)
     pbf = calc_avg_dist(points, c, n)
     return pbf
+
+
+def has_primary_amine(mol):
+    """
+    Uses SMARTS to determine if the molecule has a primary amine.
+
+    :param mol: pybel molecule object
+    :return: 1 if mol has a primary amine, 0 otherwise
+    :rtype: bool
+    """
+    primary_amines = PRIMARY_AMINE_SMARTS.findall(mol)
+
+    return len(primary_amines) > 0
 
 
 def rotatable_bonds(mol):
