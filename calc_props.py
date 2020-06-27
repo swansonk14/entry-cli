@@ -8,6 +8,7 @@ import pybel
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from tqdm import tqdm
 
 ###############################
 
@@ -31,8 +32,9 @@ def main():
             report_properties(properties)
     elif args.batch_file:
         mols = parse_batch(args.batch_file)
+        mols = list(mols)
         mols_to_write = []
-        for smiles, name in mols:
+        for smiles, name in tqdm(mols):
             mol = smiles_to_ob(smiles)
             properties = average_properties(mol)
             properties['smiles'] = name
@@ -340,9 +342,10 @@ def get_atom_coords(mol, heavy_only=False):
     """
     num_atoms = len(mol.atoms)
     pts = np.empty(shape=(num_atoms, 3))
+    atoms = mol.atoms
 
     for a in range(num_atoms):
-        pts[a] = mol.atoms[a].coords
+        pts[a] = atoms[a].coords
 
     return pts
 

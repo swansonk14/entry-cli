@@ -9,3 +9,4 @@ dependencies:
 - nose
 - openbabel
 - rdkit
+- tqdm
