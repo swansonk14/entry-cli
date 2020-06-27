@@ -9,5 +9,6 @@ dependencies:
 - nose
 - openbabel
 - rdkit
+- pandas
 - pip:
     - p-tqdm

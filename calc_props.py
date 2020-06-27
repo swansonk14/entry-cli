@@ -5,6 +5,7 @@ import sys
 import csv
 import openbabel as ob
 import pybel
+import pandas as pd
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -32,10 +33,13 @@ def main():
         else:
             report_properties(properties)
     elif args.batch_file:
-        mols = parse_batch(args.batch_file)
-        smiles, names = zip(*mols)
-        mols_to_write = p_map(average_properties, smiles)
-        write_csv(mols_to_write, args.output)
+        data = pd.read_csv(args.batch_file)
+        smiles = data[args.smiles_column]
+        properties = p_map(average_properties, smiles)
+        data['primary_amine'] = [prop['primary_amine'] for prop in properties]
+        data['globularity'] = [prop['glob'] for prop in properties]
+        data['rotatable_bonds'] = [prop['rb'] for prop in properties]
+        data.to_csv(args.output, index=False)
 
 
 def parse_args(arguments):
@@ -46,6 +50,7 @@ def parse_args(arguments):
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-s", "--smiles", dest="smiles", metavar="SMILES string", default=None)
     group.add_argument("-b", "--batch", dest="batch_file", metavar="Batch file", default=None)
+    group.add_argument("-c", "--column", dest="smiles_column", metavar="Smiles column", default='canonical_smiles')
     parser.add_argument("-o", "--output", dest="output", metavar="Output file", default=None,
                         help="Defaults to csv file with same name as input")
 
@@ -145,9 +150,6 @@ def average_properties(smiles):
         # pbfs[i] = calc_pbf(pymol)
 
     data = {
-        'smiles': smiles,
-        'formula': pymol.formula,
-        'molwt': pymol.molwt,
         'rb': rotatable_bonds(pymol),
         'glob': np.mean(globs),
         'primary_amine': has_primary_amine(pymol),
