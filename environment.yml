@@ -3,6 +3,7 @@ channels:
   - openbabel
   - rdkit
   - defaults
+  - conda-forge
 dependencies:
 - python=3
 - numpy

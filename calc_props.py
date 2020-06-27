@@ -138,20 +138,20 @@ def average_properties(mol):
     num_confs = mols.NumConformers()
 
     globs = np.empty(num_confs)
-    pbfs = np.empty(num_confs)
+    # pbfs = np.empty(num_confs)
     for i in range(num_confs):
         mols.SetConformer(i)
         pymol = pybel.Molecule(mols)
         # calculate properties
         globs[i] = calc_glob(pymol)
-        pbfs[i] = calc_pbf(pymol)
+        # pbfs[i] = calc_pbf(pymol)
 
     data = {
         'formula': pymol.formula,
         'molwt': pymol.molwt,
         'rb': rotatable_bonds(pymol),
         'glob': np.mean(globs),
-        'pbf': np.mean(pbfs)
+        # 'pbf': np.mean(pbfs)
     }
     return data
 
