@@ -8,9 +8,10 @@ import pybel
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
+
 ###############################
 
-__doc__="""Performs calculation of physiochemical properties of potential antibiotics. SMILES strings are parsed,
+__doc__ = """Performs calculation of physiochemical properties of potential antibiotics. SMILES strings are parsed,
 conformers are generated, and properties calculated. Properties include: chemical formula, molecular weight, rotatable
 bonds, globularity, and PBF.
 """
@@ -18,17 +19,17 @@ bonds, globularity, and PBF.
 
 def main():
     args = parse_args(sys.argv[1:])
-    if(args.smiles):
+    if args.smiles:
         mol = smiles_to_ob(args.smiles)
         properties = average_properties(mol)
         properties['smiles'] = args.smiles
         # A file will be written if command line option provide, otherwise write to stdout
-        if(args.output):
+        if args.output:
             mols_to_write = [properties]
             write_csv(mols_to_write, args.output)
         else:
             report_properties(properties)
-    elif(args.batch_file):
+    elif args.batch_file:
         mols = parse_batch(args.batch_file)
         mols_to_write = []
         for smiles, name in mols:
@@ -210,14 +211,15 @@ def run_confab(mol, rmsd_cutoff=0.5, conf_cutoff=100000, energy_cutoff=50.0, con
     :return: list of conformers for a given molecule
     :rtype: openbabel.OBMol
     """
-    pff = ob.OBForceField_FindType( "mmff94" )
+    pff = ob.OBForceField_FindType("mmff94")
     pff.Setup(mol)
 
     pff.DiverseConfGen(rmsd_cutoff, conf_cutoff, energy_cutoff, confab_verbose)
 
-    pff.GetConformers(mol);
+    pff.GetConformers(mol)
 
     return mol
+
 
 def calc_glob(mol):
     """
@@ -231,13 +233,13 @@ def calc_glob(mol):
     :return: globularity of molecule
     :rtype: float | int
     """
-    points = get_atom_coords(mol, heavy_only = False)
+    points = get_atom_coords(mol, heavy_only=False)
     if points is None:
         return 0
     points = points.T
 
     # calculate covariance matrix
-    cov_mat = np.cov([points[0,:],points[1,:],points[2,:]])
+    cov_mat = np.cov([points[0, :], points[1, :], points[2, :]])
 
     # calculate eigenvalues of covariance matrix and sort
     vals, vecs = np.linalg.eig(cov_mat)
@@ -245,7 +247,7 @@ def calc_glob(mol):
 
     # glob is ratio of last eigenvalue and first eigenvalue
     if vals[0] != 0:
-        return vals[-1]/vals[0]
+        return vals[-1] / vals[0]
     else:
         return -1
 
@@ -328,7 +330,8 @@ def calc_avg_dist(points, C, N):
         sum += abs(distance(xyz, C, N))
     return sum / len(points)
 
-def get_atom_coords(mol, heavy_only = False):
+
+def get_atom_coords(mol, heavy_only=False):
     """
     Retrieve the 3D coordinates of all atoms in a molecules
 
@@ -336,12 +339,13 @@ def get_atom_coords(mol, heavy_only = False):
     :return numpy array of coordinates
     """
     num_atoms = len(mol.atoms)
-    pts = np.empty(shape = (num_atoms,3))
+    pts = np.empty(shape=(num_atoms, 3))
 
     for a in range(num_atoms):
         pts[a] = mol.atoms[a].coords
 
     return pts
+
 
 def svd_fit(X):
     """
@@ -390,6 +394,7 @@ def distance(x, C, N):
             will be negative if the points beside opposite side of the normal vector
     """
     return np.dot(x - C, N)
+
 
 if __name__ == '__main__':
     main()
