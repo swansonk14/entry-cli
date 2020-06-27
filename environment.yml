@@ -3,11 +3,11 @@ channels:
   - openbabel
   - rdkit
   - defaults
-  - conda-forge
 dependencies:
 - python=3
 - numpy
 - nose
 - openbabel
 - rdkit
-- tqdm
+- pip:
+    - p-tqdm

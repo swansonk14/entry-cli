@@ -8,7 +8,7 @@ import pybel
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from tqdm import tqdm
+from p_tqdm import p_map
 
 ###############################
 
@@ -24,9 +24,7 @@ PRIMARY_AMINE_SMARTS = pybel.Smarts('[$([N;H2;X3][CX4]),$([N;H3;X4+][CX4])]')
 def main():
     args = parse_args(sys.argv[1:])
     if args.smiles:
-        mol = smiles_to_ob(args.smiles)
-        properties = average_properties(mol)
-        properties['smiles'] = args.smiles
+        properties = average_properties(args.smiles)
         # A file will be written if command line option provide, otherwise write to stdout
         if args.output:
             mols_to_write = [properties]
@@ -35,13 +33,8 @@ def main():
             report_properties(properties)
     elif args.batch_file:
         mols = parse_batch(args.batch_file)
-        mols = list(mols)
-        mols_to_write = []
-        for smiles, name in tqdm(mols):
-            mol = smiles_to_ob(smiles)
-            properties = average_properties(mol)
-            properties['smiles'] = name
-            mols_to_write.append(properties)
+        smiles, names = zip(*mols)
+        mols_to_write = p_map(average_properties, smiles)
         write_csv(mols_to_write, args.output)
 
 
@@ -127,17 +120,18 @@ def write_csv(mols_to_write, filename):
             writer.writerow(mol)
 
 
-def average_properties(mol):
+def average_properties(smiles):
     """
     Calculate all relevant properties for a given molecule averaged across conformers
 
-    :param mol: input molecule
+    :param mol: input molecule smiles
     :type mol: openbabel.OBMol
     :return: dictionary of properties
     :rtype dict
 
     ..todo: remove reliance on pybel
     """
+    mol = smiles_to_ob(smiles)
     mols = run_confab(mol)
     num_confs = mols.NumConformers()
 
@@ -151,11 +145,12 @@ def average_properties(mol):
         # pbfs[i] = calc_pbf(pymol)
 
     data = {
+        'smiles': smiles,
         'formula': pymol.formula,
         'molwt': pymol.molwt,
         'rb': rotatable_bonds(pymol),
         'glob': np.mean(globs),
-        'primary_amine': has_primary_amine(pymol)
+        'primary_amine': has_primary_amine(pymol),
         # 'pbf': np.mean(pbfs)
     }
     return data
