@@ -276,7 +276,7 @@ def has_primary_amine(mol):
     Uses SMARTS to determine if the molecule has a primary amine.
 
     :param mol: pybel molecule object
-    :return: 1 if mol has a primary amine, 0 otherwise
+    :return: True if mol has a primary amine, False otherwise
     :rtype: bool
     """
     primary_amines = PRIMARY_AMINE_SMARTS.findall(mol)
