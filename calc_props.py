@@ -35,7 +35,7 @@ def main():
     elif args.batch_file:
         data = pd.read_csv(args.batch_file)
         smiles = data[args.smiles_column]
-        properties = p_map(average_properties, smiles)
+        properties = p_map(average_properties_safe, smiles)
         data['primary_amine'] = [prop['primary_amine'] for prop in properties]
         data['globularity'] = [prop['glob'] for prop in properties]
         data['rotatable_bonds'] = [prop['rb'] for prop in properties]
@@ -123,6 +123,17 @@ def write_csv(mols_to_write, filename):
         writer.writeheader()
         for mol in mols_to_write:
             writer.writerow(mol)
+
+
+def average_properties_safe(smiles):
+    try:
+        return average_properties(smiles)
+    except:
+        return {
+            'rb': None,
+            'glob': None,
+            'primary_amine': None
+        }
 
 
 def average_properties(smiles):
