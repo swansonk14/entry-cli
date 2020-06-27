@@ -337,9 +337,10 @@ def get_atom_coords(mol, heavy_only = False):
     """
     num_atoms = len(mol.atoms)
     pts = np.empty(shape = (num_atoms,3))
+    atoms = mol.atoms
 
     for a in range(num_atoms):
-        pts[a] = mol.atoms[a].coords
+        pts[a] = atoms[a].coords
 
     return pts
 
