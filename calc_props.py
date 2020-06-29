@@ -9,7 +9,9 @@ import pandas as pd
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from p_tqdm import p_map
+from tqdm import trange
+from multiprocessing.context import TimeoutError
+from multiprocessing import Pool
 
 ###############################
 
@@ -20,6 +22,11 @@ bonds, globularity, and PBF.
 
 
 PRIMARY_AMINE_SMARTS = pybel.Smarts('[$([N;H2;X3][CX4]),$([N;H3;X4+][CX4])]')
+EMPTY_PROPERTIES = {
+    'primary_amine': None,
+    'glob': None,
+    'rb': None
+}
 
 
 def main():
@@ -35,7 +42,16 @@ def main():
     elif args.batch_file:
         data = pd.read_csv(args.batch_file)
         smiles = data[args.smiles_column]
-        properties = p_map(average_properties_safe, smiles)
+
+        with Pool() as pool:
+            iterator = pool.imap(average_properties_safe, smiles)
+            properties = []
+            for _ in trange(len(smiles)):
+                try:
+                    properties.append(iterator.next(timeout=args.timeout))
+                except TimeoutError:
+                    properties.append(EMPTY_PROPERTIES)
+
         data['primary_amine'] = [prop['primary_amine'] for prop in properties]
         data['globularity'] = [prop['glob'] for prop in properties]
         data['rotatable_bonds'] = [prop['rb'] for prop in properties]
@@ -53,6 +69,7 @@ def parse_args(arguments):
     group.add_argument("-c", "--column", dest="smiles_column", metavar="Smiles column", default='canonical_smiles')
     parser.add_argument("-o", "--output", dest="output", metavar="Output file", default=None,
                         help="Defaults to csv file with same name as input")
+    parser.add_argument("-t", "--timeout", dest="timeout", metavar="Timeout", default=120)
 
     args = parser.parse_args(arguments)
     if not args.smiles and not args.batch_file:
