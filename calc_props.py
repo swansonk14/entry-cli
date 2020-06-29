@@ -69,7 +69,7 @@ def parse_args(arguments):
     group.add_argument("-c", "--column", dest="smiles_column", metavar="Smiles column", default='canonical_smiles')
     parser.add_argument("-o", "--output", dest="output", metavar="Output file", default=None,
                         help="Defaults to csv file with same name as input")
-    parser.add_argument("-t", "--timeout", dest="timeout", metavar="Timeout", default=120)
+    parser.add_argument("-t", "--timeout", dest="timeout", metavar="Timeout", default=300)
 
     args = parser.parse_args(arguments)
     if not args.smiles and not args.batch_file:
