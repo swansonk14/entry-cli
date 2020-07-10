@@ -16,7 +16,9 @@ bonds, globularity, and PBF.
 """
 
 
-PRIMARY_AMINE_SMARTS = pybel.Smarts('[$([N;H2;X3][CX4]),$([N;H3;X4+][CX4])]')
+FUNCTIONAL_GROUP_TO_SMARTS = {
+    'primary_amine': pybel.Smarts('[$([N;H2;X3][CX4]),$([N;H3;X4+][CX4])]')
+}
 
 
 def main():
@@ -152,9 +154,12 @@ def average_properties(mol):
         'molwt': pymol.molwt,
         'rb': rotatable_bonds(pymol),
         'glob': np.mean(globs),
-        'pbf': np.mean(pbfs),
-        'primary_amine': has_primary_amine(pymol)
+        'pbf': np.mean(pbfs)
     }
+
+    for functional_group, smarts in FUNCTIONAL_GROUP_TO_SMARTS.items():
+        data[functional_group] = has_functional_group(pymol, smarts)
+
     return data
 
 
@@ -271,17 +276,18 @@ def calc_pbf(mol):
     return pbf
 
 
-def has_primary_amine(mol):
+def has_functional_group(mol, smarts):
     """
-    Uses SMARTS to determine if the molecule has a primary amine.
+    Determines whether the molecule has the functional group specified by the SMARTS.
 
     :param mol: pybel molecule object
-    :return: True if mol has a primary amine, False otherwise
+    :param smarts: pybel SMARTS object
+    :return: True if mol has an instance of the functional group, False otherwise
     :rtype: bool
     """
-    primary_amines = PRIMARY_AMINE_SMARTS.findall(mol)
+    functional_groups = smarts.findall(mol)
 
-    return len(primary_amines) > 0
+    return len(functional_groups) > 0
 
 
 def rotatable_bonds(mol):
