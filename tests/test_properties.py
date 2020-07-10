@@ -146,3 +146,28 @@ def test_dnm():
     mol = calc_props.smiles_to_ob("CC(C1=CC(C(C)=CC(N2C)=O)=C2C3=C1N4CO3)=CC4=O")
     properties = calc_props.average_properties(mol)
     assert_almost_equal(properties['glob'], 0.024, 2, 1)
+
+def test_primary_amine_serine():
+    mol = calc_props.smiles_to_ob("C(C(C(=O)O)N)O")
+    pymol = pybel.Molecule(mol)
+    assert_equals(calc_props.has_primary_amine(pymol), True)
+
+def test_primary_amine_glycine():
+    mol = calc_props.smiles_to_ob("C(C(=O)O)N")
+    pymol = pybel.Molecule(mol)
+    assert_equals(calc_props.has_primary_amine(pymol), True)
+
+def test_primary_amine_dimethylamine():
+    mol = calc_props.smiles_to_ob("CNC")
+    pymol = pybel.Molecule(mol)
+    assert_equals(calc_props.has_primary_amine(pymol), False)
+
+def test_primary_amine_aniline():
+    mol = calc_props.smiles_to_ob("Nc1ccccc1")
+    pymol = pybel.Molecule(mol)
+    assert_equals(calc_props.has_primary_amine(pymol), False)
+
+def test_primary_amine_imine():
+    mol = calc_props.smiles_to_ob("CC1=CC(=CC=C1)N=CC2=CC=CC=C2")
+    pymol = pybel.Molecule(mol)
+    assert_equals(calc_props.has_primary_amine(pymol), False)
