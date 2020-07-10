@@ -3,9 +3,9 @@ import argparse
 import os
 import sys
 import csv
+from functools import partial
 import openbabel as ob
 import pybel
-import pandas as pd
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -22,11 +22,6 @@ bonds, globularity, and PBF.
 
 
 PRIMARY_AMINE_SMARTS = pybel.Smarts('[$([N;H2;X3][CX4]),$([N;H3;X4+][CX4])]')
-EMPTY_PROPERTIES = {
-    'primary_amine': None,
-    'glob': None,
-    'rb': None
-}
 
 
 def main():
@@ -40,22 +35,26 @@ def main():
         else:
             report_properties(properties)
     elif args.batch_file:
-        data = pd.read_csv(args.batch_file)
-        smiles = data[args.smiles_column]
+        with open(args.batch_file) as f:
+            reader = csv.DictReader(f)
+            read_fieldnames = list(reader.fieldnames)
+            data = list(reader)
 
-        with Pool() as pool:
-            iterator = pool.imap(average_properties_safe, smiles)
-            properties = []
-            for _ in trange(len(smiles)):
+        write_fieldnames = read_fieldnames + ['primary_amine', 'globularity', 'rotatable_bonds']
+
+        with Pool() as pool, open(args.output, 'w') as f:
+            writer = csv.DictWriter(f, fieldnames=write_fieldnames)
+            writer.writeheader()
+            iterator = pool.imap_unordered(partial(average_properties_safe, smiles_column=args.smiles_column), data)
+
+            for _ in trange(len(data)):
                 try:
-                    properties.append(iterator.next(timeout=args.timeout))
-                except TimeoutError:
-                    properties.append(EMPTY_PROPERTIES)
+                    row = iterator.next(timeout=args.timeout)
 
-        data['primary_amine'] = [prop['primary_amine'] for prop in properties]
-        data['globularity'] = [prop['glob'] for prop in properties]
-        data['rotatable_bonds'] = [prop['rb'] for prop in properties]
-        data.to_csv(args.output, index=False)
+                    if row is not None:
+                        writer.writerow(row)
+                except TimeoutError:
+                    pass
 
 
 def parse_args(arguments):
@@ -69,7 +68,7 @@ def parse_args(arguments):
     group.add_argument("-c", "--column", dest="smiles_column", metavar="Smiles column", default='canonical_smiles')
     parser.add_argument("-o", "--output", dest="output", metavar="Output file", default=None,
                         help="Defaults to csv file with same name as input")
-    parser.add_argument("-t", "--timeout", dest="timeout", type=int, metavar="Timeout", default=120)
+    parser.add_argument("-t", "--timeout", dest="timeout", type=int, metavar="Timeout", default=10)
 
     args = parser.parse_args(arguments)
     if not args.smiles and not args.batch_file:
@@ -142,15 +141,14 @@ def write_csv(mols_to_write, filename):
             writer.writerow(mol)
 
 
-def average_properties_safe(smiles):
+def average_properties_safe(row, smiles_column='smiles'):
     try:
-        return average_properties(smiles)
-    except:
-        return {
-            'rb': None,
-            'glob': None,
-            'primary_amine': None
-        }
+        properties = average_properties(row[smiles_column])
+        row.update(properties)
+        return row
+    except Exception as e:
+        print(e)
+        return None
 
 
 def average_properties(smiles):
@@ -178,8 +176,8 @@ def average_properties(smiles):
         # pbfs[i] = calc_pbf(pymol)
 
     data = {
-        'rb': rotatable_bonds(pymol),
-        'glob': np.mean(globs),
+        'rotatable_bonds': rotatable_bonds(pymol),
+        'globularity': np.mean(globs),
         'primary_amine': has_primary_amine(pymol),
         # 'pbf': np.mean(pbfs)
     }
