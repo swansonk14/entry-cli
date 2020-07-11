@@ -176,3 +176,21 @@ def test_primary_amine_imine():
     pymol = pybel.Molecule(mol)
     primary_amine_smarts = calc_props.FUNCTIONAL_GROUP_TO_SMARTS["primary_amine"]
     assert_equals(calc_props.has_functional_group(pymol, primary_amine_smarts), False)
+
+def test_primary_amine_1_benzylguanidine():
+    mol = calc_props.smiles_to_ob("NC(NCC1=CC=CC=C1)=N")
+    pymol = pybel.Molecule(mol)
+    primary_amine_smarts = calc_props.FUNCTIONAL_GROUP_TO_SMARTS["primary_amine"]
+    assert_equals(calc_props.has_functional_group(pymol, primary_amine_smarts), False)
+
+def test_primary_amine_methylethyl_ketone_oxime():
+    mol = calc_props.smiles_to_ob("CC/C(C)=N/O")
+    pymol = pybel.Molecule(mol)
+    primary_amine_smarts = calc_props.FUNCTIONAL_GROUP_TO_SMARTS["primary_amine"]
+    assert_equals(calc_props.has_functional_group(pymol, primary_amine_smarts), False)
+
+def test_primary_amine_benzenesulfonamide():
+    mol = calc_props.smiles_to_ob("O=S(C1=CC=CC=C1)(N)=O")
+    pymol = pybel.Molecule(mol)
+    primary_amine_smarts = calc_props.FUNCTIONAL_GROUP_TO_SMARTS["primary_amine"]
+    assert_equals(calc_props.has_functional_group(pymol, primary_amine_smarts), False)

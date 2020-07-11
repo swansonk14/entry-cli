@@ -19,6 +19,7 @@ bonds, globularity, and PBF.
 FUNCTIONAL_GROUP_TO_SMARTS = {
     'primary_amine': pybel.Smarts('[$([N;H2;X3][CX4]),$([N;H3;X4+][CX4])]')
 }
+FUNCTIONAL_GROUPS = sorted(FUNCTIONAL_GROUP_TO_SMARTS.keys())
 
 
 def main():
@@ -83,7 +84,8 @@ def report_properties(properties):
     print("RB:\t\t%i" % properties['rb'])
     print("Glob:\t\t%f" % properties['glob'])
     print("PBF:\t\t%f" % properties['pbf'])
-    print("P. Amine:\t%s" % properties['primary_amine'])
+    for functional_group in FUNCTIONAL_GROUPS:
+        print("%s:\t%s" % (functional_group, properties[functional_group]))
 
 
 def parse_batch(filename):
@@ -119,7 +121,7 @@ def write_csv(mols_to_write, filename):
     :return: None
     """
     with(open(filename, 'w')) as out:
-        fieldnames = ['smiles', 'formula', 'molwt', 'rb', 'glob', 'pbf', 'primary_amine']
+        fieldnames = ['smiles', 'formula', 'molwt', 'rb', 'glob', 'pbf'] + FUNCTIONAL_GROUPS
         writer = csv.DictWriter(out, fieldnames=fieldnames)
         writer.writeheader()
         for mol in mols_to_write:
